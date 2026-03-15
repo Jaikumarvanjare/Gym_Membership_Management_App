@@ -7,6 +7,12 @@ import {
   deleteMember
 } from "../controllers/memberController";
 
+import { validate } from "../middleware/validate";
+import {
+  createMemberSchema,
+  updateMemberSchema
+} from "../validators/memberValidator";
+
 const router = express.Router();
 
 /**
@@ -32,7 +38,7 @@ const router = express.Router();
  *       201:
  *         description: Member created successfully
  */
-router.post("/members", createMember);
+router.post("/members", validate(createMemberSchema), createMember);
 
 /**
  * @swagger
@@ -95,7 +101,7 @@ router.get("/members/:id", getMemberById);
  *       200:
  *         description: Member updated successfully
  */
-router.put("/members/:id", updateMember);
+router.put("/members/:id", validate(updateMemberSchema), updateMember);
 
 /**
  * @swagger
