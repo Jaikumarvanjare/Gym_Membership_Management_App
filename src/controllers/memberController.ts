@@ -16,3 +16,14 @@ export const createMember = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error creating member" });
   }
 };
+
+export const getMembers = async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query("SELECT * FROM members ORDER BY id ASC");
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching members" });
+  }
+};
