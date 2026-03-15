@@ -9,20 +9,25 @@ import {
   deleteMemberService
 } from "../services/memberService";
 
-import {
-  CreateMemberDTO,
-  UpdateMemberDTO
-} from "../dto/member.dto";
-
-type MemberParams = {
-  id: string;
-};
+interface AuthRequest extends Request {
+  user?: {
+    id: number;
+    role: string;
+  };
+}
 
 /**
- * Create Member
+ * Create Member (Admin only)
  */
 export const createMember = asyncHandler(
-  async (req: Request<{}, {}, CreateMemberDTO>, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
+
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can create members"
+      });
+    }
+
     const { name, email, membership_type } = req.body;
 
     const member = await createMemberService(
@@ -36,10 +41,17 @@ export const createMember = asyncHandler(
 );
 
 /**
- * Get All Members
+ * Get All Members (Admin only)
  */
 export const getMembers = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
+
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can view all members"
+      });
+    }
+
     const members = await getMembersService();
 
     res.status(200).json(members);
@@ -48,9 +60,12 @@ export const getMembers = asyncHandler(
 
 /**
  * Get Member By ID
+ * Admin can view any
+ * Customer can view own
  */
 export const getMemberById = asyncHandler(
-  async (req: Request<MemberParams>, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
+
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
@@ -67,29 +82,36 @@ export const getMemberById = asyncHandler(
       });
     }
 
+    if (req.user?.role !== "admin" && req.user?.id !== member.id) {
+      return res.status(403).json({
+        message: "Unauthorized access"
+      });
+    }
+
     res.status(200).json(member);
   }
 );
 
 /**
- * Update Member
+ * Update Member (Admin only)
  */
 export const updateMember = asyncHandler(
-  async (req: Request<MemberParams, {}, UpdateMemberDTO>, res: Response) => {
-    const id = Number(req.params.id);
-    const { name, email, membership_type } = req.body;
+  async (req: AuthRequest, res: Response) => {
 
-    if (isNaN(id)) {
-      return res.status(400).json({
-        message: "Invalid member id"
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can update members"
       });
     }
 
+    const id = Number(req.params.id);
+    const { name, email, membership_type } = req.body;
+
     const member = await updateMemberService(
       id,
-      name!,
-      email!,
-      membership_type!
+      name,
+      email,
+      membership_type
     );
 
     if (!member) {
@@ -103,17 +125,18 @@ export const updateMember = asyncHandler(
 );
 
 /**
- * Delete Member
+ * Delete Member (Admin only)
  */
 export const deleteMember = asyncHandler(
-  async (req: Request<MemberParams>, res: Response) => {
-    const id = Number(req.params.id);
+  async (req: AuthRequest, res: Response) => {
 
-    if (isNaN(id)) {
-      return res.status(400).json({
-        message: "Invalid member id"
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can delete members"
       });
     }
+
+    const id = Number(req.params.id);
 
     const member = await deleteMemberService(id);
 
