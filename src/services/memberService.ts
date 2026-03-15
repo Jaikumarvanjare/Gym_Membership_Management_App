@@ -13,10 +13,28 @@ export const createMemberService = async (
   return result.rows[0];
 };
 
-export const getMembersService = async () => {
-  const result = await pool.query(
-    "SELECT * FROM members ORDER BY id ASC"
-  );
+export const getMembersService = async (
+  page: number,
+  limit: number,
+  membership_type?: string
+) => {
+
+  const offset = (page - 1) * limit;
+
+  let query = "SELECT * FROM members";
+  let values: any[] = [];
+
+  if (membership_type) {
+    query += " WHERE membership_type = $1";
+    values.push(membership_type);
+  }
+
+  query += " ORDER BY id ASC LIMIT $" + (values.length + 1) +
+           " OFFSET $" + (values.length + 2);
+
+  values.push(limit, offset);
+
+  const result = await pool.query(query, values);
 
   return result.rows;
 };

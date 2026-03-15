@@ -44,20 +44,27 @@ export const createMember = asyncHandler(
  * Get All Members (Admin only)
  */
 export const getMembers = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
 
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        message: "Only admin can view all members"
-      });
-    }
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const membership_type = req.query.membership_type as string;
 
-    const members = await getMembersService();
+    const members = await getMembersService(
+      page,
+      limit,
+      membership_type
+    );
 
-    res.status(200).json(members);
+    res.json({
+      page,
+      limit,
+      count: members.length,
+      data: members
+    });
+
   }
 );
-
 /**
  * Get Member By ID
  * Admin can view any

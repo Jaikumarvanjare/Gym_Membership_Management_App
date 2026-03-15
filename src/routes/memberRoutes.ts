@@ -67,6 +67,22 @@ router.post(
  *     tags: [Members]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         example: 10
+ *       - in: query
+ *         name: membership_type
+ *         schema:
+ *           type: string
+ *         example: premium
  *     responses:
  *       200:
  *         description: List of members
