@@ -68,3 +68,23 @@ export const updateMember = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error updating member" });
   }
 };
+
+export const deleteMember = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      "DELETE FROM members WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    res.status(200).json({ message: "Member deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error deleting member" });
+  }
+};
