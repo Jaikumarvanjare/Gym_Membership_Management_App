@@ -1,35 +1,35 @@
 import { Request, Response } from "express";
 import pool from "../config/db";
+import { asyncHandler } from "../utils/asyncHandler";
 
-export const createMember = async (req: Request, res: Response) => {
-  try {
-    const { name, email, membership_type } = req.body;
+/**
+ * Create Member
+ */
+export const createMember = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, membership_type } = req.body;
 
-    const result = await pool.query(
-      "INSERT INTO members (name, email, membership_type) VALUES ($1,$2,$3) RETURNING *",
-      [name, email, membership_type]
-    );
+  const result = await pool.query(
+    "INSERT INTO members (name, email, membership_type) VALUES ($1, $2, $3) RETURNING *",
+    [name, email, membership_type]
+  );
 
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error creating member" });
-  }
-};
+  res.status(201).json(result.rows[0]);
+});
 
-export const getMembers = async (req: Request, res: Response) => {
-  try {
-    const result = await pool.query("SELECT * FROM members ORDER BY id ASC");
+/**
+ * Get All Members
+ */
+export const getMembers = asyncHandler(async (req: Request, res: Response) => {
+  const result = await pool.query("SELECT * FROM members ORDER BY id ASC");
 
-    res.status(200).json(result.rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching members" });
-  }
-};
+  res.status(200).json(result.rows);
+});
 
-export const getMemberById = async (req: Request, res: Response) => {
-  try {
+/**
+ * Get Member By ID
+ */
+export const getMemberById = asyncHandler(
+  async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const result = await pool.query(
@@ -42,14 +42,14 @@ export const getMemberById = async (req: Request, res: Response) => {
     }
 
     res.status(200).json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching member" });
   }
-};
+);
 
-export const updateMember = async (req: Request, res: Response) => {
-  try {
+/**
+ * Update Member
+ */
+export const updateMember = asyncHandler(
+  async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, email, membership_type } = req.body;
 
@@ -63,14 +63,14 @@ export const updateMember = async (req: Request, res: Response) => {
     }
 
     res.status(200).json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error updating member" });
   }
-};
+);
 
-export const deleteMember = async (req: Request, res: Response) => {
-  try {
+/**
+ * Delete Member
+ */
+export const deleteMember = asyncHandler(
+  async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const result = await pool.query(
@@ -83,8 +83,5 @@ export const deleteMember = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ message: "Member deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error deleting member" });
   }
-};
+);
