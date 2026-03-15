@@ -12,6 +12,9 @@
   "peerDependencies": {
     "typescript": "^5.9.3"
   },
+  "scripts": {
+    "start": "bun --watch index.ts"
+  },
   "dependencies": {
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^8.2.3",

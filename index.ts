@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import pool from "./src/config/db";
+import memberRoutes from "./src/routes/memberRoutes";
 
 dotenv.config();
 
@@ -10,10 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/", async (req, res) => {
-  const result = await pool.query("SELECT NOW()");
-  res.json(result.rows);
-});
+app.use("/gmma/api/v1", memberRoutes);
 
 const PORT = process.env.PORT;
 
