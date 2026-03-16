@@ -8,6 +8,7 @@ import authRoutes from "./src/routes/authRoutes";
 import { errorHandler } from "./src/middleware/errorHandler";
 import adminRoutes from "./src/routes/adminRoutes";
 import paymentRoutes from "./src/routes/paymentRoutes";
+import dashboardRoutes from "./src/routes/dashboardRoutes";
 
 dotenv.config();
 const app = express();
@@ -19,6 +20,7 @@ app.use("/gmma/api/v1", adminRoutes);
 app.use("/gmma/api/v1", authRoutes);
 app.use("/gmma/api/v1", memberRoutes);
 app.use("/gmma/api/v1", paymentRoutes);
+app.use("/gmma/api/v1", dashboardRoutes);
 
 app.get("/", (req, res) => {
   res.send("Gym Membership Management API running");
