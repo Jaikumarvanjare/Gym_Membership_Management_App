@@ -6,7 +6,8 @@ import {
   getMembersService,
   getMemberByIdService,
   updateMemberService,
-  deleteMemberService
+  deleteMemberService,
+  getExpiredMembersService
 } from "../services/memberService";
 
 interface AuthRequest extends Request {
@@ -41,10 +42,16 @@ export const createMember = asyncHandler(
 );
 
 /**
- * Get All Members (Admin only)
+ * Get All Members (Admin only with pagination)
  */
 export const getMembers = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
+
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can view all members"
+      });
+    }
 
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
@@ -62,9 +69,9 @@ export const getMembers = asyncHandler(
       count: members.length,
       data: members
     });
-
   }
 );
+
 /**
  * Get Member By ID
  * Admin can view any
@@ -74,12 +81,6 @@ export const getMemberById = asyncHandler(
   async (req: AuthRequest, res: Response) => {
 
     const id = Number(req.params.id);
-
-    if (isNaN(id)) {
-      return res.status(400).json({
-        message: "Invalid member id"
-      });
-    }
 
     const member = await getMemberByIdService(id);
 
@@ -95,7 +96,7 @@ export const getMemberById = asyncHandler(
       });
     }
 
-    res.status(200).json(member);
+    res.json(member);
   }
 );
 
@@ -127,7 +128,7 @@ export const updateMember = asyncHandler(
       });
     }
 
-    res.status(200).json(member);
+    res.json(member);
   }
 );
 
@@ -153,8 +154,26 @@ export const deleteMember = asyncHandler(
       });
     }
 
-    res.status(200).json({
+    res.json({
       message: "Member deleted successfully"
     });
+  }
+);
+
+/**
+ * Get Expired Members
+ */
+export const getExpiredMembers = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can view expired members"
+      });
+    }
+
+    const members = await getExpiredMembersService();
+
+    res.json(members);
   }
 );

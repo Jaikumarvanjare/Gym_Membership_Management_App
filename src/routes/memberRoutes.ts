@@ -5,7 +5,8 @@ import {
   getMembers,
   getMemberById,
   updateMember,
-  deleteMember
+  deleteMember,
+  getExpiredMembers
 } from "../controllers/memberController";
 
 import { authenticate } from "../middleware/authMiddleware";
@@ -27,29 +28,6 @@ const router = express.Router();
  *     tags: [Members]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - membership_type
- *             properties:
- *               name:
- *                 type: string
- *                 example: John Doe
- *               email:
- *                 type: string
- *                 example: john@gmail.com
- *               membership_type:
- *                 type: string
- *                 example: premium
- *     responses:
- *       201:
- *         description: Member created successfully
  */
 router.post(
   "/members",
@@ -67,25 +45,6 @@ router.post(
  *     tags: [Members]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         example: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         example: 10
- *       - in: query
- *         name: membership_type
- *         schema:
- *           type: string
- *         example: premium
- *     responses:
- *       200:
- *         description: List of members
  */
 router.get(
   "/members",
@@ -102,20 +61,27 @@ router.get(
  *     tags: [Members]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Member details
  */
 router.get(
   "/members/:id",
   authenticate,
   getMemberById
+);
+
+/**
+ * @swagger
+ * /gmma/api/v1/members/expired:
+ *   get:
+ *     summary: Get expired members
+ *     tags: [Members]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  "/members/expired",
+  authenticate,
+  authorizeRole("admin"),
+  getExpiredMembers
 );
 
 /**
@@ -126,15 +92,6 @@ router.get(
  *     tags: [Members]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Member updated successfully
  */
 router.put(
   "/members/:id",
@@ -152,15 +109,6 @@ router.put(
  *     tags: [Members]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Member deleted successfully
  */
 router.delete(
   "/members/:id",

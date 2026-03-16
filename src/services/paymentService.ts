@@ -1,5 +1,8 @@
 import pool from "../config/db";
 
+/**
+ * Create Payment + Update Membership
+ */
 export const createPaymentService = async (
   member_id: number,
   amount: number,
@@ -14,7 +17,9 @@ export const createPaymentService = async (
 
     // Check if member exists
     const member = await client.query(
-      `SELECT id FROM members WHERE id = $1`,
+      `SELECT id, membership_end
+       FROM members
+       WHERE id = $1`,
       [member_id]
     );
 
@@ -30,13 +35,27 @@ export const createPaymentService = async (
       [member_id, amount, payment_method]
     );
 
-    // Update membership
+    // Membership renewal logic
     await client.query(
-      `UPDATE members
-       SET membership_start = CURRENT_DATE,
-           membership_end = CURRENT_DATE + INTERVAL '30 days',
-           membership_status = 'active'
-       WHERE id = $1`,
+      `
+      UPDATE members
+      SET
+        membership_start = CASE
+          WHEN membership_end IS NULL OR membership_end < CURRENT_DATE
+          THEN CURRENT_DATE
+          ELSE membership_start
+        END,
+
+        membership_end = CASE
+          WHEN membership_end IS NULL OR membership_end < CURRENT_DATE
+          THEN CURRENT_DATE + INTERVAL '30 days'
+          ELSE membership_end + INTERVAL '30 days'
+        END,
+
+        membership_status = 'active'
+
+      WHERE id = $1
+      `,
       [member_id]
     );
 
@@ -57,10 +76,14 @@ export const createPaymentService = async (
 };
 
 
+/**
+ * Get All Payments
+ */
 export const getPaymentsService = async () => {
 
   const result = await pool.query(
-    `SELECT * FROM payments
+    `SELECT *
+     FROM payments
      ORDER BY payment_date DESC`
   );
 
@@ -68,25 +91,17 @@ export const getPaymentsService = async () => {
 };
 
 
+/**
+ * Get Payments By Member
+ */
 export const getPaymentsByMemberService = async (member_id: number) => {
 
   const result = await pool.query(
-    `SELECT * FROM payments
-     WHERE member_id=$1
+    `SELECT *
+     FROM payments
+     WHERE member_id = $1
      ORDER BY payment_date DESC`,
     [member_id]
-  );
-
-  return result.rows;
-};
-
-
-export const getExpiredMembersService = async () => {
-
-  const result = await pool.query(
-    `SELECT *
-     FROM members
-     WHERE membership_end < CURRENT_DATE`
   );
 
   return result.rows;

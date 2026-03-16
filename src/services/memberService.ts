@@ -70,3 +70,14 @@ export const deleteMemberService = async (id: number) => {
 
   return result.rows[0];
 };
+
+export const getExpiredMembersService = async () => {
+
+  const result = await pool.query(
+    `SELECT *
+     FROM members
+     WHERE membership_end < CURRENT_DATE`
+  );
+
+  return result.rows;
+};

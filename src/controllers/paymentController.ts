@@ -7,14 +7,36 @@ import {
   getPaymentsByMemberService
 } from "../services/paymentService";
 
+interface AuthRequest extends Request {
+  user?: {
+    id: number;
+    role: string;
+  };
+}
+
+/**
+ * Create Payment (Admin only)
+ */
 export const createPayment = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
+
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can create payments"
+      });
+    }
 
     const { member_id, amount, payment_method } = req.body;
 
+    if (!member_id || !amount || !payment_method) {
+      return res.status(400).json({
+        message: "member_id, amount and payment_method are required"
+      });
+    }
+
     const payment = await createPaymentService(
-      member_id,
-      amount,
+      Number(member_id),
+      Number(amount),
       payment_method
     );
 
@@ -22,8 +44,18 @@ export const createPayment = asyncHandler(
   }
 );
 
+
+/**
+ * Get All Payments (Admin only)
+ */
 export const getPayments = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
+
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can view payments"
+      });
+    }
 
     const payments = await getPaymentsService();
 
@@ -31,12 +63,22 @@ export const getPayments = asyncHandler(
   }
 );
 
+
+/**
+ * Get Payments By Member
+ */
 export const getPaymentsByMember = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
 
-    const member_id = Number(req.params.memberId);
+    const memberId = Number(req.params.memberId);
 
-    const payments = await getPaymentsByMemberService(member_id);
+    if (!memberId) {
+      return res.status(400).json({
+        message: "Invalid member id"
+      });
+    }
+
+    const payments = await getPaymentsByMemberService(memberId);
 
     res.json(payments);
   }
