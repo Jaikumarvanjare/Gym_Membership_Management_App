@@ -7,6 +7,7 @@ import memberRoutes from "./src/routes/memberRoutes";
 import authRoutes from "./src/routes/authRoutes";
 import { errorHandler } from "./src/middleware/errorHandler";
 import adminRoutes from "./src/routes/adminRoutes";
+import paymentRoutes from "./src/routes/paymentRoutes";
 
 dotenv.config();
 const app = express();
@@ -17,6 +18,7 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/gmma/api/v1", adminRoutes);
 app.use("/gmma/api/v1", authRoutes);
 app.use("/gmma/api/v1", memberRoutes);
+app.use("/gmma/api/v1", paymentRoutes);
 
 app.get("/", (req, res) => {
   res.send("Gym Membership Management API running");
