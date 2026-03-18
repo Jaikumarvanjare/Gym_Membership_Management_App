@@ -41,7 +41,7 @@ router.post(
  * @swagger
  * /gmma/api/v1/members:
  *   get:
- *     summary: Get all gym members
+ *     summary: Get all gym members with pagination
  *     tags: [Members]
  *     security:
  *       - bearerAuth: []

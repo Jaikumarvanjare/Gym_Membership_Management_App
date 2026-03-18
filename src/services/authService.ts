@@ -8,6 +8,10 @@ export const signupService = async (
   role: string
 ) => {
 
+  if (!["admin", "customer"].includes(role)) {
+    throw new Error("Invalid role");
+  }
+
   const existing = await pool.query(
     "SELECT * FROM users WHERE email=$1",
     [email]
@@ -34,11 +38,14 @@ export const signupService = async (
 
   return result.rows[0];
 };
-
 export const loginService = async (
   email: string,
   password: string
 ) => {
+
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT secret missing");
+  }
 
   const result = await pool.query(
     "SELECT * FROM users WHERE email=$1",
@@ -63,7 +70,7 @@ export const loginService = async (
 
   const token = jwt.sign(
     { id: user.id, role: user.role },
-    process.env.JWT_SECRET as string,
+    process.env.JWT_SECRET,
     { expiresIn: "1d" }
   );
 

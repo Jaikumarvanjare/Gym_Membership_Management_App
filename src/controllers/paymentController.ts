@@ -15,21 +15,16 @@ interface AuthRequest extends Request {
 }
 
 /**
- * Create Payment (Admin only)
+ * Create Payment
  */
 export const createPayment = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        message: "Only admin can create payments"
-      });
-    }
 
     const { member_id, amount, payment_method } = req.body;
 
     if (!member_id || !amount || !payment_method) {
       return res.status(400).json({
+        success: false,
         message: "member_id, amount and payment_method are required"
       });
     }
@@ -40,29 +35,27 @@ export const createPayment = asyncHandler(
       payment_method
     );
 
-    res.status(201).json(payment);
+    res.status(201).json({
+      success: true,
+      data: payment
+    });
   }
 );
 
-
 /**
- * Get All Payments (Admin only)
+ * Get All Payments
  */
 export const getPayments = asyncHandler(
   async (req: AuthRequest, res: Response) => {
 
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        message: "Only admin can view payments"
-      });
-    }
-
     const payments = await getPaymentsService();
 
-    res.json(payments);
+    res.json({
+      success: true,
+      data: payments
+    });
   }
 );
-
 
 /**
  * Get Payments By Member
@@ -74,12 +67,16 @@ export const getPaymentsByMember = asyncHandler(
 
     if (!memberId) {
       return res.status(400).json({
+        success: false,
         message: "Invalid member id"
       });
     }
 
     const payments = await getPaymentsByMemberService(memberId);
 
-    res.json(payments);
+    res.json({
+      success: true,
+      data: payments
+    });
   }
 );

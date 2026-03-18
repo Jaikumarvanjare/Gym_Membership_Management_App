@@ -4,17 +4,31 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Gym Membership Management API",
+      title: "Gym Management API",
       version: "1.0.0",
-      description: "API documentation for GMMA backend",
+      description: "API documentation for Gym Management System"
     },
     servers: [
       {
-        url: "http://localhost:3000",
-      },
+        url: "http://localhost:3000"
+      }
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT"
+        }
+      }
+    },
+    security: [
+      {
+        bearerAuth: []
+      }
+    ]
   },
-  apis: ["./src/routes/*.ts"],
+  apis: ["./src/routes/*.ts"]
 };
 
 const swaggerSpec = swaggerJsdoc(options);

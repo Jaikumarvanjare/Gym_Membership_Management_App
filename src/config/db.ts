@@ -3,16 +3,20 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is missing in .env");
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-pool.connect()
-  .then(() => {
-    console.log("PostgreSQL connected");
-  })
-  .catch((err) => {
-    console.error("Database connection error:", err);
-  });
+pool.on("connect", () => {
+  console.log("PostgreSQL connected");
+});
+
+pool.on("error", (err) => {
+  console.error("Unexpected DB error", err);
+});
 
 export default pool;

@@ -18,16 +18,10 @@ interface AuthRequest extends Request {
 }
 
 /**
- * Create Member (Admin only)
+ * Create Member
  */
 export const createMember = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        message: "Only admin can create members"
-      });
-    }
 
     const { name, email, membership_type } = req.body;
 
@@ -37,45 +31,41 @@ export const createMember = asyncHandler(
       membership_type
     );
 
-    res.status(201).json(member);
+    res.status(201).json({
+      success: true,
+      data: member
+    });
   }
 );
 
 /**
- * Get All Members (Admin only with pagination)
+ * Get Members
  */
 export const getMembers = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        message: "Only admin can view all members"
-      });
-    }
 
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const membership_type = req.query.membership_type as string;
 
-    const members = await getMembersService(
+    const result = await getMembersService(
       page,
       limit,
       membership_type
     );
 
     res.json({
+      success: true,
       page,
       limit,
-      count: members.length,
-      data: members
+      total: result.total,
+      data: result.data
     });
   }
 );
 
 /**
  * Get Member By ID
- * Admin can view any
- * Customer can view own
  */
 export const getMemberById = asyncHandler(
   async (req: AuthRequest, res: Response) => {
@@ -86,31 +76,23 @@ export const getMemberById = asyncHandler(
 
     if (!member) {
       return res.status(404).json({
+        success: false,
         message: "Member not found"
       });
     }
 
-    if (req.user?.role !== "admin" && req.user?.id !== member.id) {
-      return res.status(403).json({
-        message: "Unauthorized access"
-      });
-    }
-
-    res.json(member);
+    res.json({
+      success: true,
+      data: member
+    });
   }
 );
 
 /**
- * Update Member (Admin only)
+ * Update Member
  */
 export const updateMember = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        message: "Only admin can update members"
-      });
-    }
 
     const id = Number(req.params.id);
     const { name, email, membership_type } = req.body;
@@ -124,25 +106,23 @@ export const updateMember = asyncHandler(
 
     if (!member) {
       return res.status(404).json({
+        success: false,
         message: "Member not found"
       });
     }
 
-    res.json(member);
+    res.json({
+      success: true,
+      data: member
+    });
   }
 );
 
 /**
- * Delete Member (Admin only)
+ * Delete Member
  */
 export const deleteMember = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        message: "Only admin can delete members"
-      });
-    }
 
     const id = Number(req.params.id);
 
@@ -150,11 +130,13 @@ export const deleteMember = asyncHandler(
 
     if (!member) {
       return res.status(404).json({
+        success: false,
         message: "Member not found"
       });
     }
 
     res.json({
+      success: true,
       message: "Member deleted successfully"
     });
   }
@@ -166,14 +148,11 @@ export const deleteMember = asyncHandler(
 export const getExpiredMembers = asyncHandler(
   async (req: AuthRequest, res: Response) => {
 
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        message: "Only admin can view expired members"
-      });
-    }
-
     const members = await getExpiredMembersService();
 
-    res.json(members);
+    res.json({
+      success: true,
+      data: members
+    });
   }
 );

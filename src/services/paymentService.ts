@@ -9,33 +9,43 @@ export const createPaymentService = async (
   payment_method: string
 ) => {
 
+  if (amount <= 0) {
+    const error: any = new Error("Amount must be greater than 0");
+    error.status = 400;
+    throw error;
+  }
+
   const client = await pool.connect();
 
   try {
 
     await client.query("BEGIN");
 
-    // Check if member exists
-    const member = await client.query(
+    // Check member
+    const memberRes = await client.query(
       `SELECT id, membership_end
        FROM members
        WHERE id = $1`,
       [member_id]
     );
 
-    if (member.rows.length === 0) {
-      throw new Error("Member not found");
+    if (memberRes.rows.length === 0) {
+      const error: any = new Error("Member not found");
+      error.status = 404;
+      throw error;
     }
 
+    const member = memberRes.rows[0];
+
     // Insert payment
-    const payment = await client.query(
+    const paymentRes = await client.query(
       `INSERT INTO payments (member_id, amount, payment_method)
        VALUES ($1,$2,$3)
        RETURNING *`,
       [member_id, amount, payment_method]
     );
 
-    // Membership renewal logic
+    // Membership update logic
     await client.query(
       `
       UPDATE members
@@ -61,7 +71,7 @@ export const createPaymentService = async (
 
     await client.query("COMMIT");
 
-    return payment.rows[0];
+    return paymentRes.rows[0];
 
   } catch (error) {
 
@@ -69,9 +79,7 @@ export const createPaymentService = async (
     throw error;
 
   } finally {
-
     client.release();
-
   }
 };
 

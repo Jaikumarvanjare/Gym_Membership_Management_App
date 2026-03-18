@@ -58,9 +58,6 @@ router.post(
  *     tags: [Payments]
  *     security:
  *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of all payments
  */
 router.get(
   "/payments",
@@ -77,16 +74,6 @@ router.get(
  *     tags: [Payments]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: memberId
- *         required: true
- *         schema:
- *           type: integer
- *         example: 1
- *     responses:
- *       200:
- *         description: Member payment history
  */
 router.get(
   "/payments/:memberId",

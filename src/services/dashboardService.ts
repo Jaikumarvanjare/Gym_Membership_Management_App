@@ -17,14 +17,13 @@ export const getDashboardStatsService = async () => {
   );
 
   const revenue = await pool.query(
-    `SELECT COALESCE(SUM(amount),0) FROM payments`
+    `SELECT COALESCE(SUM(amount),0) as total FROM payments`
   );
 
   return {
     total_members: Number(totalMembers.rows[0].count),
     active_members: Number(activeMembers.rows[0].count),
     expired_members: Number(expiredMembers.rows[0].count),
-    total_revenue: Number(revenue.rows[0].coalesce)
+    total_revenue: Number(revenue.rows[0].total)
   };
-
 };

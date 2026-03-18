@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS payments (
+    id SERIAL PRIMARY KEY,
+    member_id INT REFERENCES members(id) ON DELETE CASCADE,
+    amount NUMERIC NOT NULL,
+    payment_method VARCHAR(50),
+    payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

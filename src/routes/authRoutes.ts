@@ -1,5 +1,7 @@
 import express from "express";
 import { signup, login } from "../controllers/authController";
+import { validate } from "../middleware/validate";
+import { signupSchema, loginSchema } from "../validators/authValidator";
 
 const router = express.Router();
 
@@ -31,9 +33,9 @@ const router = express.Router();
  *                 example: customer
  *     responses:
  *       201:
- *         description: User registered successfully
+ *         description: Signup successful
  */
-router.post("/auth/signup", signup);
+router.post("/auth/signup", validate(signupSchema), signup);
 
 /**
  * @swagger
@@ -61,6 +63,6 @@ router.post("/auth/signup", signup);
  *       200:
  *         description: Login successful
  */
-router.post("/auth/login", login);
+router.post("/auth/login", validate(loginSchema), login);
 
 export default router;

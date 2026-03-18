@@ -1,15 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 
-export const validate =
-  (schema: any) =>
+export const validate = (schema: any) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
       schema.parse(req.body);
       next();
-    } catch (error: any) {
+    } catch (err: any) {
       return res.status(400).json({
-        message: "Validation error",
-        errors: error.errors,
+        success: false,
+        message: err.errors
       });
     }
   };
