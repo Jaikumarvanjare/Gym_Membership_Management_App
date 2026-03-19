@@ -1,27 +1,16 @@
 import { Request, Response, NextFunction } from "express";
+import { AppError } from "./errorHandler";
+import "../types/express"; // ensures the global augmentation is loaded
 
-interface AuthRequest extends Request {
-  user?: {
-    id: number;
-    role: string;
-  };
-}
-
-export const authorizeRole = (role: string) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-
-    if (!req.user) {
-      return res.status(401).json({
-        message: "Unauthorized"
-      });
+export const authorizeRole = (...roles: string[]) =>
+  (req: Request, _res: Response, next: NextFunction): void => {
+    if (
+      typeof req.user !== "object" ||
+      req.user === null ||
+      typeof req.user.role !== "string" ||
+      !roles.includes(req.user.role)
+    ) {
+      throw new AppError("Forbidden: insufficient permissions", 403);
     }
-
-    if (req.user.role !== role) {
-      return res.status(403).json({
-        message: "Access denied"
-      });
-    }
-
     next();
   };
-};

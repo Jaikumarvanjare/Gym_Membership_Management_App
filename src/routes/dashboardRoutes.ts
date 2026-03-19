@@ -1,10 +1,9 @@
-import express from "express";
-
+import { Router } from "express";
 import { getDashboardStats } from "../controllers/dashboardController";
 import { authenticate } from "../middleware/authMiddleware";
 import { authorizeRole } from "../middleware/authorizeRole";
 
-const router = express.Router();
+const router = Router();
 
 /**
  * @swagger
@@ -14,6 +13,13 @@ const router = express.Router();
  *     tags: [Dashboard]
  *     security:
  *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Stats returned successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 router.get(
   "/dashboard/stats",

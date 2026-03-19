@@ -1,14 +1,11 @@
 import { Request, Response, NextFunction } from "express";
+import { ZodSchema } from "zod";
 
-export const validate = (schema: any) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req.body);
-      next();
-    } catch (err: any) {
-      return res.status(400).json({
-        success: false,
-        message: err.errors
-      });
-    }
+// Validates req.body against the given Zod schema.
+// On failure the ZodError is forwarded to errorHandler which returns 422.
+export const validate =
+  (schema: ZodSchema) =>
+  (req: Request, _res: Response, next: NextFunction): void => {
+    req.body = schema.parse(req.body); // throws ZodError on invalid input
+    next();
   };

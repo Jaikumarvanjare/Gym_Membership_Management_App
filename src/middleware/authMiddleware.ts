@@ -1,45 +1,30 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import "../types/express"; // ensures the global augmentation is loaded
 
-interface AuthRequest extends Request {
-  user?: {
-    id: number;
-    role: string;
-  };
-}
+const JWT_SECRET = process.env.JWT_SECRET as string;
 
 export const authenticate = (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
-) => {
-
+): void => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(401).json({
-      message: "Token missing"
-    });
+  if (!authHeader?.startsWith("Bearer ")) {
+    res.status(401).json({ success: false, message: "Authorization token missing" });
+    return;
   }
 
   const token = authHeader.split(" ")[1];
 
-  try {
+  // jwt.verify throws JsonWebTokenError / TokenExpiredError on failure —
+  // both are caught by errorHandler so we just let them propagate.
+  const decoded = jwt.verify(token, JWT_SECRET) as {
+    id: number;
+    role: "admin" | "customer";
+  };
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET as string
-    ) as { id: number; role: string };
-
-    req.user = decoded;
-
-    next();
-
-  } catch (error) {
-
-    return res.status(401).json({
-      message: "Invalid token"
-    });
-
-  }
+  req.user = decoded;
+  next();
 };

@@ -1,77 +1,58 @@
-import pool from "../config/db";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import pool from "../config/db";
+import { AppError } from "../middleware/errorHandler";
+
+const SALT_ROUNDS = 12;
+const JWT_SECRET = process.env.JWT_SECRET as string;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? "7d";
 
 export const signupService = async (
   email: string,
   password: string,
-  role: string
+  role: "admin" | "customer"
 ) => {
-
-  if (!["admin", "customer"].includes(role)) {
-    throw new Error("Invalid role");
-  }
-
+  // Check for existing user — return 409 Conflict, not 500
   const existing = await pool.query(
-    "SELECT * FROM users WHERE email=$1",
+    "SELECT id FROM users WHERE email = $1",
     [email]
   );
-
-  if (existing.rows.length > 0) {
-    throw new Error("User already exists");
+  if (existing.rowCount && existing.rowCount > 0) {
+    throw new AppError("Email is already registered", 409);
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  let status = "confirmed";
-
-  if (role === "admin") {
-    status = "pending";
-  }
+  const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
 
   const result = await pool.query(
-    `INSERT INTO users (email,password,role,status)
-     VALUES ($1,$2,$3,$4)
-     RETURNING id,email,role,status`,
-    [email, hashedPassword, role || "customer", status]
+    `INSERT INTO users (email, password_hash, role)
+     VALUES ($1, $2, $3)
+     RETURNING id, email, role, created_at`,
+    [email, password_hash, role]
   );
 
   return result.rows[0];
 };
-export const loginService = async (
-  email: string,
-  password: string
-) => {
 
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT secret missing");
-  }
-
+export const loginService = async (email: string, password: string) => {
   const result = await pool.query(
-    "SELECT * FROM users WHERE email=$1",
+    "SELECT id, email, password_hash, role FROM users WHERE email = $1",
     [email]
   );
 
   const user = result.rows[0];
 
-  if (!user) {
-    throw new Error("Invalid credentials");
-  }
+  // Use a constant-time comparison — never reveal whether email or password failed
+  const isValid =
+    user && (await bcrypt.compare(password, user.password_hash));
 
-  const valid = await bcrypt.compare(password, user.password);
-
-  if (!valid) {
-    throw new Error("Invalid credentials");
-  }
-
-  if (user.status !== "confirmed") {
-    throw new Error("Account not approved yet");
+  if (!isValid) {
+    throw new AppError("Invalid email or password", 401);
   }
 
   const token = jwt.sign(
     { id: user.id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "1d" }
+    JWT_SECRET as jwt.Secret,
+    { expiresIn: (JWT_EXPIRES_IN ?? "7d") as unknown as number }
   );
 
   return token;

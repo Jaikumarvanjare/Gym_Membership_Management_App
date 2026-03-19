@@ -1,144 +1,114 @@
 import pool from "../config/db";
+import { AppError } from "../middleware/errorHandler";
+import { CreateMemberInput, UpdateMemberInput } from "../validators/memberValidator";
 
-/**
- * Create Member
- */
-export const createMemberService = async (
-  name: string,
-  email: string,
-  membership_type: string
-) => {
+// Membership durations in days per type
+const MEMBERSHIP_DURATION: Record<string, number> = {
+  monthly: 30,
+  quarterly: 90,
+  annual: 365,
+};
 
-  // Check duplicate email
+export const createMemberService = async (input: CreateMemberInput) => {
+  const { name, email, membership_type } = input;
+
   const existing = await pool.query(
-    "SELECT * FROM members WHERE email=$1",
+    "SELECT id FROM members WHERE email = $1",
     [email]
   );
-
-  if (existing.rows.length > 0) {
-    const error: any = new Error("Member already exists");
-    error.status = 400;
-    throw error;
+  if (existing.rowCount && existing.rowCount > 0) {
+    throw new AppError("A member with this email already exists", 409);
   }
 
+  const days = MEMBERSHIP_DURATION[membership_type];
   const result = await pool.query(
-    `INSERT INTO members 
-     (name, email, membership_type, membership_start, membership_status)
-     VALUES ($1,$2,$3,CURRENT_DATE,'active')
+    `INSERT INTO members (name, email, membership_type, membership_end, membership_status)
+     VALUES ($1, $2, $3, CURRENT_DATE + $4::int, 'active')
      RETURNING *`,
-    [name, email, membership_type]
+    [name, email, membership_type, days]
   );
 
   return result.rows[0];
 };
 
-
-/**
- * Get Members (Pagination + Filter + Total Count)
- */
 export const getMembersService = async (
   page: number,
   limit: number,
   membership_type?: string
 ) => {
-
   const offset = (page - 1) * limit;
 
-  let baseQuery = "FROM members";
-  let values: any[] = [];
+  // Build query dynamically only when the filter is provided
+  const conditions: string[] = [];
+  const params: unknown[] = [];
 
   if (membership_type) {
-    baseQuery += " WHERE membership_type = $1";
-    values.push(membership_type);
+    conditions.push(`membership_type = $${params.length + 1}`);
+    params.push(membership_type);
   }
 
-  // Total count
-  const countQuery = `SELECT COUNT(*) ${baseQuery}`;
-  const countResult = await pool.query(countQuery, values);
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
-  // Data query
-  const dataQuery = `
-    SELECT *
-    ${baseQuery}
-    ORDER BY id ASC
-    LIMIT $${values.length + 1}
-    OFFSET $${values.length + 2}
-  `;
+  const countResult = await pool.query(
+    `SELECT COUNT(*) FROM members ${where}`,
+    params
+  );
 
-  values.push(limit, offset);
-
-  const dataResult = await pool.query(dataQuery, values);
+  const dataResult = await pool.query(
+    `SELECT * FROM members ${where}
+     ORDER BY join_date DESC
+     LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, limit, offset]
+  );
 
   return {
     total: Number(countResult.rows[0].count),
-    data: dataResult.rows
+    data: dataResult.rows,
   };
 };
 
-
-/**
- * Get Member By ID
- */
 export const getMemberByIdService = async (id: number) => {
-
   const result = await pool.query(
     "SELECT * FROM members WHERE id = $1",
     [id]
   );
-
-  return result.rows[0];
+  return result.rows[0] ?? null;
 };
 
-
-/**
- * Update Member
- */
 export const updateMemberService = async (
   id: number,
-  name?: string,
-  email?: string,
-  membership_type?: string
+  input: UpdateMemberInput
 ) => {
+  // Build SET clause only for fields that were provided
+  const fields = Object.entries(input).filter(([, v]) => v !== undefined);
+  if (fields.length === 0) return null;
+
+  const setClauses = fields.map(([key], i) => `${key} = $${i + 1}`);
+  const values = fields.map(([, v]) => v);
 
   const result = await pool.query(
-    `UPDATE members
-     SET
-       name = COALESCE($1, name),
-       email = COALESCE($2, email),
-       membership_type = COALESCE($3, membership_type)
-     WHERE id = $4
+    `UPDATE members SET ${setClauses.join(", ")}
+     WHERE id = $${values.length + 1}
      RETURNING *`,
-    [name, email, membership_type, id]
+    [...values, id]
   );
 
-  return result.rows[0];
+  return result.rows[0] ?? null;
 };
 
-
-/**
- * Delete Member
- */
 export const deleteMemberService = async (id: number) => {
-
   const result = await pool.query(
-    "DELETE FROM members WHERE id = $1 RETURNING *",
+    "DELETE FROM members WHERE id = $1 RETURNING id",
     [id]
   );
-
-  return result.rows[0];
+  return result.rows[0] ?? null;
 };
 
-
-/**
- * Get Expired Members
- */
 export const getExpiredMembersService = async () => {
-
   const result = await pool.query(
-    `SELECT *
-     FROM members
-     WHERE membership_end < CURRENT_DATE`
+    `SELECT * FROM members
+     WHERE membership_status = 'expired'
+     ORDER BY membership_end DESC`
   );
-
   return result.rows;
 };

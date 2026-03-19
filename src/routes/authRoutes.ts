@@ -1,15 +1,15 @@
-import express from "express";
+import { Router } from "express";
 import { signup, login } from "../controllers/authController";
 import { validate } from "../middleware/validate";
 import { signupSchema, loginSchema } from "../validators/authValidator";
 
-const router = express.Router();
+const router = Router();
 
 /**
  * @swagger
  * /gmma/api/v1/auth/signup:
  *   post:
- *     summary: Register a new user (customer or admin)
+ *     summary: Register a new user
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -17,23 +17,23 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
+ *             required: [email, password]
  *             properties:
  *               email:
  *                 type: string
- *                 example: user@gmail.com
+ *                 example: user@example.com
  *               password:
  *                 type: string
  *                 example: password123
  *               role:
  *                 type: string
  *                 enum: [customer, admin]
- *                 example: customer
+ *                 default: customer
  *     responses:
  *       201:
  *         description: Signup successful
+ *       422:
+ *         description: Validation error
  */
 router.post("/auth/signup", validate(signupSchema), signup);
 
@@ -41,7 +41,7 @@ router.post("/auth/signup", validate(signupSchema), signup);
  * @swagger
  * /gmma/api/v1/auth/login:
  *   post:
- *     summary: Login user and return JWT token
+ *     summary: Login and receive a JWT token
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -49,19 +49,17 @@ router.post("/auth/signup", validate(signupSchema), signup);
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
+ *             required: [email, password]
  *             properties:
  *               email:
  *                 type: string
- *                 example: user@gmail.com
  *               password:
  *                 type: string
- *                 example: password123
  *     responses:
  *       200:
  *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
  */
 router.post("/auth/login", validate(loginSchema), login);
 

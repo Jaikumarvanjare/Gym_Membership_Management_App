@@ -6,6 +6,8 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/bun": "latest",
+    "@types/cors": "^2.8.19",
+    "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.6",
     "@types/helmet": "^0.0.48",
     "@types/jsonwebtoken": "^9.0.10",
@@ -21,8 +23,6 @@
     "start": "bun --watch index.ts"
   },
   "dependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/dotenv": "^8.2.3",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",

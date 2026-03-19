@@ -1,158 +1,68 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-
+import { AppError } from "../middleware/errorHandler";
 import {
   createMemberService,
   getMembersService,
   getMemberByIdService,
   updateMemberService,
   deleteMemberService,
-  getExpiredMembersService
+  getExpiredMembersService,
 } from "../services/memberService";
+import { CreateMemberInput, UpdateMemberInput } from "../validators/memberValidator";
 
-interface AuthRequest extends Request {
-  user?: {
-    id: number;
-    role: string;
-  };
-}
+export const createMember = asyncHandler(async (req: Request, res: Response) => {
+  const body = req.body as CreateMemberInput;
+  const member = await createMemberService(body);
+  res.status(201).json({ success: true, data: member });
+});
 
-/**
- * Create Member
- */
-export const createMember = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
+export const getMembers = asyncHandler(async (req: Request, res: Response) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 10));
+  const membership_type = req.query.membership_type as string | undefined;
 
-    const { name, email, membership_type } = req.body;
+  const result = await getMembersService(page, limit, membership_type);
 
-    const member = await createMemberService(
-      name,
-      email,
-      membership_type
-    );
+  res.status(200).json({
+    success: true,
+    data: result.data,
+    meta: { page, limit, total: result.total },
+  });
+});
 
-    res.status(201).json({
-      success: true,
-      data: member
-    });
-  }
-);
+export const getMemberById = asyncHandler(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) throw new AppError("Invalid member ID", 400);
 
-/**
- * Get Members
- */
-export const getMembers = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
+  const member = await getMemberByIdService(id);
+  if (!member) throw new AppError("Member not found", 404);
 
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
-    const membership_type = req.query.membership_type as string;
+  res.status(200).json({ success: true, data: member });
+});
 
-    const result = await getMembersService(
-      page,
-      limit,
-      membership_type
-    );
+export const updateMember = asyncHandler(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) throw new AppError("Invalid member ID", 400);
 
-    res.json({
-      success: true,
-      page,
-      limit,
-      total: result.total,
-      data: result.data
-    });
-  }
-);
+  const body = req.body as UpdateMemberInput;
+  const member = await updateMemberService(id, body);
+  if (!member) throw new AppError("Member not found", 404);
 
-/**
- * Get Member By ID
- */
-export const getMemberById = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
+  res.status(200).json({ success: true, data: member });
+});
 
-    const id = Number(req.params.id);
+export const deleteMember = asyncHandler(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) throw new AppError("Invalid member ID", 400);
 
-    const member = await getMemberByIdService(id);
+  const deleted = await deleteMemberService(id);
+  if (!deleted) throw new AppError("Member not found", 404);
 
-    if (!member) {
-      return res.status(404).json({
-        success: false,
-        message: "Member not found"
-      });
-    }
+  res.status(200).json({ success: true, message: "Member deleted successfully" });
+});
 
-    res.json({
-      success: true,
-      data: member
-    });
-  }
-);
-
-/**
- * Update Member
- */
-export const updateMember = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-
-    const id = Number(req.params.id);
-    const { name, email, membership_type } = req.body;
-
-    const member = await updateMemberService(
-      id,
-      name,
-      email,
-      membership_type
-    );
-
-    if (!member) {
-      return res.status(404).json({
-        success: false,
-        message: "Member not found"
-      });
-    }
-
-    res.json({
-      success: true,
-      data: member
-    });
-  }
-);
-
-/**
- * Delete Member
- */
-export const deleteMember = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-
-    const id = Number(req.params.id);
-
-    const member = await deleteMemberService(id);
-
-    if (!member) {
-      return res.status(404).json({
-        success: false,
-        message: "Member not found"
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Member deleted successfully"
-    });
-  }
-);
-
-/**
- * Get Expired Members
- */
-export const getExpiredMembers = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-
-    const members = await getExpiredMembersService();
-
-    res.json({
-      success: true,
-      data: members
-    });
-  }
-);
+export const getExpiredMembers = asyncHandler(async (_req: Request, res: Response) => {
+  const members = await getExpiredMembersService();
+  res.status(200).json({ success: true, data: members });
+});

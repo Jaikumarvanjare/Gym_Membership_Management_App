@@ -1,82 +1,30 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-
+import { AppError } from "../middleware/errorHandler";
 import {
   createPaymentService,
   getPaymentsService,
-  getPaymentsByMemberService
+  getPaymentsByMemberService,
 } from "../services/paymentService";
+import { CreatePaymentInput } from "../validators/paymentValidator";
 
-interface AuthRequest extends Request {
-  user?: {
-    id: number;
-    role: string;
-  };
-}
+export const createPayment = asyncHandler(async (req: Request, res: Response) => {
+  const body = req.body as CreatePaymentInput;
+  const payment = await createPaymentService(body);
+  res.status(201).json({ success: true, data: payment });
+});
 
-/**
- * Create Payment
- */
-export const createPayment = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
+export const getPayments = asyncHandler(async (_req: Request, res: Response) => {
+  const payments = await getPaymentsService();
+  res.status(200).json({ success: true, data: payments });
+});
 
-    const { member_id, amount, payment_method } = req.body;
-
-    if (!member_id || !amount || !payment_method) {
-      return res.status(400).json({
-        success: false,
-        message: "member_id, amount and payment_method are required"
-      });
-    }
-
-    const payment = await createPaymentService(
-      Number(member_id),
-      Number(amount),
-      payment_method
-    );
-
-    res.status(201).json({
-      success: true,
-      data: payment
-    });
+export const getPaymentsByMember = asyncHandler(async (req: Request, res: Response) => {
+  const memberId = Number(req.params.memberId);
+  if (!Number.isInteger(memberId) || memberId <= 0) {
+    throw new AppError("Invalid member ID", 400);
   }
-);
 
-/**
- * Get All Payments
- */
-export const getPayments = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-
-    const payments = await getPaymentsService();
-
-    res.json({
-      success: true,
-      data: payments
-    });
-  }
-);
-
-/**
- * Get Payments By Member
- */
-export const getPaymentsByMember = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-
-    const memberId = Number(req.params.memberId);
-
-    if (!memberId) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid member id"
-      });
-    }
-
-    const payments = await getPaymentsByMemberService(memberId);
-
-    res.json({
-      success: true,
-      data: payments
-    });
-  }
-);
+  const payments = await getPaymentsByMemberService(memberId);
+  res.status(200).json({ success: true, data: payments });
+});
